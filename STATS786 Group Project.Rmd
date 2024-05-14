@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 library(lubridate)
 library(fpp3)
 library(tsibbledata)
@@ -14,8 +15,12 @@ Sys.setlocale("LC_TIME", "English_United States.1252")
 ```
 
 # 1. Exploratory data analysis
-```{r}
-
+```{r, warning=FALSE}
+# read in the data
+train <- read_csv('qgdp_training.csv') %>%
+  mutate(Date = yearquarter(Date)) %>%
+  as_tsibble(index = Date) %>% 
+  select(1:18)
 ```
 
 # 2. ETS models
