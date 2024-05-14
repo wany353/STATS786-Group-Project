@@ -1,0 +1,12 @@
+---
+title: "STATS 786 Group Project"
+author: "Yucheng Wang, Eric Shi, Tongxin Li, Jinze, Li"
+date: "2024-05-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
