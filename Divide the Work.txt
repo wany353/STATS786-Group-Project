@@ -1,0 +1,10 @@
+Divide the Work
+
+Eric: ARIMA models
+Jinze Li: ETS models, Exploratory data analysis
+Yucheng Wang, Tongxin Li: Neural network autoregression models
+(Corresponding model assumption checking should be carried)
+
+Due time: 21/5/2024, before test set release.
+
+Some kind suggestions: Instead of just submitting the final model, each change can be submitted to GitHub for other members to refer to or make suggestions.
