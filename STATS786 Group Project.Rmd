@@ -37,8 +37,18 @@ train <- read_csv('qgdp_training.csv') %>%
 ```
 
 # 4. Neural network autoregression (NNAR) models
-```{r}
+```{r, warning=FALSE}
+data_Agriculture <- train %>% 
+  select(Date, Agriculture)
 
+fit <- data_Agriculture %>% 
+  model(NNETAR(Agriculture))
+
+data_Agriculture %>% 
+  autoplot(Agriculture, color = 'purple', alpha = 0.5) +
+  geom_line(aes(y = augment(fit)$.fitted))
+
+accuracy(fit)
 ```
 
 # 5. Assumption checking
