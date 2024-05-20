@@ -16,13 +16,26 @@ Sys.setlocale("LC_TIME", "English_United States.1252")
 
 # 1. Exploratory data analysis
 ```{r, warning=FALSE}
-# read in the data
-train <- read_csv('qgdp_training.csv') %>%
-  mutate(Date = yearquarter(Date)) %>%
-  as_tsibble(index = Date) %>% 
-  select(1:18,'Local Government Administration') %>% 
-  select(-'Mining', -'Textile, Leather, Clothing and Footwear Manufacturing')
+# 读取数据
+data = read_csv("qgdp_training.csv")
+# 选择第一列和第十七列
+data = data %>% select(1, 17)
+# 确保第一列是日期格式
+data = data %>%
+  mutate(Date = yearquarter(Date))
+# 将数据转换为tsibble对象
+ts_data = data %>%
+  as_tsibble(index = Date)
 
+ts_data <- ts_data %>%
+  rename(Wholesale = `Wholesale Trade`)  # 列名调整
+ts_data %>% 
+  autoplot()
+# 进行STL分解并画图
+ts_data %>%
+  model(stl = STL(Wholesale, robust = TRUE)) %>%
+  components() %>%
+  autoplot()
 ```
 
 # 2. ETS models
