@@ -1,0 +1,120 @@
+---
+title: "arima"
+output: html_document
+date: "2024-05-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(fpp3)
+library(kableExtra)
+library(gt)
+library(urca)
+```
+
+## Reading data in
+
+```{r}
+qgdp = read_csv("qgdp_training.csv") %>%
+  mutate(Date = yearquarter(qgdp$Date)) %>%
+  rename(wt = "Wholesale Trade") %>%
+  as_tsibble(index = Date)
+
+qgdp %>% select(wt) %>% autoplot()
+```
+
+## Transformations
+
+```{r}
+guerrero(qgdp$wt)
+
+qgdp %>%
+  autoplot(box_cox(wt, -0.14))
+```
+
+It looks like multiplicative seasonality is present, so a Box-Cox transformation
+was applied. Guerrero's method suggested a lambda parameter of -0.14.
+
+## Differencing
+
+```{r}
+qgdp %>%
+	features(box_cox(wt, -0.14), unitroot_kpss)
+
+qgdp %>%
+	features(difference(box_cox(wt, -0.14), lag=4), unitroot_kpss)
+```
+
+Performing the KPSS test on the Box-Cox wholesale trade variable before
+differencing gave a p-value of 0.01, so we have strong evidence against
+the null hypothesis that the time series is stationary.
+
+A seasonal difference was applied because it looks like seasonality is present.
+Performing the KPSS test on the seasonally differenced series gave a p-value
+of 0.1, so we can assume the series is stationary and no further differencing
+is required.
+
+```{r}
+qgdp %>%
+  gg_tsdisplay(difference(box_cox(wt, -0.14), lag=4), plot_type="partial")
+
+fit = qgdp %>%
+  model(auto = ARIMA(box_cox(wt, -0.14), stepwise=F, approximation=F),
+        arima100210 = ARIMA(box_cox(wt, -0.14) ~ pdq(1,0,0) + PDQ(2,1,0)),
+        arima100011 = ARIMA(box_cox(wt, -0.14) ~ pdq(1,0,0) + PDQ(0,1,1)),
+        arima002210 = ARIMA(box_cox(wt, -0.14) ~ pdq(0,0,2) + PDQ(2,1,0)),
+        arima002011 = ARIMA(box_cox(wt, -0.14) ~ pdq(0,0,2) + PDQ(0,1,1)))
+
+glance(fit) %>% arrange(AICc) %>% select(.model:BIC)
+
+fit$auto
+```
+
+To come up with candidate models, we used the ARIMA function to find a model
+automatically, as well as manually finding models by considering the ACF and
+PACF plots.
+
+The PACF plot has spikes at lags 4 and 8, suggesting 2 seasonal AR terms, and
+a spike at lag 1, suggesting 1 non-seasonal AR term. The ACF plot has spikes at
+lag 4, suggesting 1 seasonal MA term, and spikes at lags 1 and 2, suggesting 2
+non-seasonal MA terms. Therefore, we considered models ARIMA(1,0,0)(0,1,1)[4],
+ARIMA(1,0,0)(2,1,0)[4], ARIMA(0,0,2)(0,1,1)[4], and ARIMA(0,0,2)(2,1,0)[4].
+
+Overall, the ARIMA model with the best predictive ability is the automatically
+found ARIMA(0,0,3)(0,1,1)[4] due to it having the lowest AICc score.
+
+## Fitted model equation
+
+The model equation in backshift notation is 
+$$(1-B^4)w_t = (1+\Theta_1B^4)(1+\theta_1B+\theta_2B^2+\theta_3B^3)
+\varepsilon_t$$
+
+where $\varepsilon_t \sim N(0, \sigma^2)$ and
+$w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
+
+## Assumption checking
+
+```{r}
+set.seed(0)
+
+fit %>%
+  select(auto) %>%
+  gg_tsresiduals()
+
+ARIMA.resid = augment(fit) %>%
+  filter(.model == "auto") %>%
+  select(.innov)
+
+surrogate.test(ARIMA.resid, 8, 1000)$p.value
+```
+
+The surrogate test p-value of 0.998 suggests that the residuals are consistent
+with white noise.
+
+## Forecasting
+
+```{r}
+fc = fit %>% select(auto) %>% forecast(h=8)
+hilo(fc, 95)
+```
