@@ -1,0 +1,54 @@
+---
+title: "NNAR model explaination"
+date: "2024-05-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# What is an NNAR Model
+
+The **NNAR** model is **Neural Network AutoRegressive** model. It's a type of model that combines ideas from neural networks and time series analysis, specifically autoregression.
+
+# The Basics of NNAR
+
+### Neural Networks
+
+- A neural network is essentially a system of algorithms designed to recognize patterns.
+
+- It processes data by passing it through layers: an input layer, one or more hidden layers, and an output layer.
+
+- Each layer is made up of units (neurons) that transform the input they receive using weights (parameters) and a bias term, typically followed by a nonlinear activation function.
+
+### Autoregression
+
+Autoregression (AR) is a type of model in time series that uses observations from previous time steps as input to a regression equation to predict the value at the next time step.
+
+### Combining the Two: NNAR
+
+The NNAR model uses a neural network to perform the autoregression. Here's how it basically works:
+- **Input Layer**: The inputs are the lagged values of the series. For instance, to predict tomorrow's temperature, we might use the temperatures from the last seven days.
+- **Hidden Layers**: These layers enable the model to capture complex patterns in the data, such as nonlinear relationships between past values.
+- **Output Layer**: Produces the forecast for the next time step(s).
+
+If you're working with a time series of data, it's simply a series of data points sorted by time (e.g., daily temperatures, stock prices, etc.). A common task in dealing with this type of data is forecasting - predicting future values based on past observations. But if the data shows different types of seasonal patterns (e.g., hourly data showing daily, weekly, and yearly patterns), then the ability of the neural network to learn from this complexity can be very advantageous.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
