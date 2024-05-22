@@ -54,8 +54,10 @@ augment(fit)
 train %>% 
   autoplot(`Wholesale Trade`, color = 'purple', alpha = 0.5) +
   geom_line(aes(y = augment(fit)$.fitted))
-
+residuals <- residuals(fit)
+Acf(residuals, main = "Autocorrelation of Residuals")
 accuracy(fit)
+
 ```
 
 # 5. Assumption checking
