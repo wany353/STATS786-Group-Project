@@ -19,39 +19,51 @@ library(kableExtra)
 
 
 ```{r}
-# 读取数据
 data = read_csv("qgdp_training.csv")
-
-# 选择第一列和第十七列
 data = data %>% select(1, 17)
-
-# 确保第一列是日期格式
 data = data %>%
   mutate(Date = yearquarter(Date))
 
-# 将数据转换为tsibble对象
+# tsibble对象
 ts_data = data %>%
   as_tsibble(index = Date)
 
 
 ts_data <- ts_data %>%
-  rename(Wholesale = `Wholesale Trade`)  # 列名调整
+  rename(Wholesale = `Wholesale Trade`)  # rename
 
 ts_data %>% 
   autoplot()
-# 进行STL分解并画图
+
+
 ts_data %>%
   model(stl = STL(Wholesale, robust = TRUE)) %>%
   components() %>%
   autoplot()
 
+
+
+# read full data
+full = read_csv("qgdp_full.csv")
+
+
+full = full %>% select(1, 17)
+
+
+full = full %>%
+  mutate(Date = yearquarter(Date))
+
+
+full = full %>%
+  as_tsibble(index = Date)
+
+
+full <- full %>%
+  rename(Wholesale = `Wholesale Trade`)  
 ```
 
 
-time plot show that整体上显示出一个上升趋势。可以看到数据有明显的周期性波动，反映了季节性变化。
-For Trend：从图中可以看到，批发量总体呈现上升趋势。早期增长缓慢，中期（大约在2000年到2010年之间）有一段时间的平稳期，然后在最近几年又开始迅速上升。
-For Seasonal：季节性图显示了周期性波动，早期的季节性波动幅度相对较小且稳定，但从中期开始，波动幅度明显增加。
-For Remainder：残差部分看起来相对随机，说明去除趋势和季节性之后没有明显的结构或模式。
+
 
 The time plot shows an overall upward trend. It can be observed that the data has obvious periodic fluctuations, reflecting seasonal variations.
 
@@ -66,7 +78,7 @@ The remainder part looks relatively random, indicating that after removing the t
 
 
 ```{r}
-# 手动拟合一些ETS模型
+#ETS model
 ets_manual <- ts_data %>%
   model(
     ets_mam = ETS(Wholesale ~ error("M") + trend("A") + season("M")),
@@ -74,15 +86,14 @@ ets_manual <- ts_data %>%
     ets_ana = ETS(Wholesale ~ error("A") + trend("N") + season("A"))
   )
 
-# 打印模型结果
-# report(ets_manual)
-# 自动拟合ETS模型
+
+# auto ETS
 ets_auto <- ts_data %>%
   model(ets = ETS(Wholesale))
-# 打印模型结果
+
 report(ets_auto)
 
-# 比较模型
+
 glance(ets_manual) %>%
   arrange(AICc)
 
@@ -114,7 +125,7 @@ ets_manual %>%
 ETS=ets_manual %>% 
   select(ets_mam)
 
-# 提取ETS模型的残差
+
 ETS.resid <- ETS %>%
   augment() %>%
   select(.innov)
@@ -185,39 +196,49 @@ surrogate.test = function(data, lag, N = 1000, test.stat = "ljung-box") {
   
 }
 
-# 对提取的残差进行独立性检验
 
 p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
 
-# 输出p值
+0
 print(p_value)
 
 
 ```
 
-
+A p-value of 0.815 indicates that we do not have enough evidence to reject the hypothesis of independence of the residuals. This means that, from a statistical perspective, the residuals appear to be independent.
 
 
 ```{r}
 ETS=ets_manual %>% 
   select(ets_mam)
 
-# 预测未来的值
+# forecast
 forecasts <- ETS %>%
-  forecast(h = "2 years") # 预测未来2年
+  forecast(h = "2 years") 
 
-# 绘制预测结果
+# forecast plot
 autoplot(forecasts) +
   labs(title = "ETS Model Forecast",
        y = "Wholesale Trade",
        x = "Time")
 
-# 绘制预测结果并添加原始数据
+
 autoplot(forecasts) +
-  autolayer(ts_data) + 
+  autolayer(full) + 
   labs(title = "ETS Model Forecast",
        y = "Wholesale Trade",
        x = "Time") +
   theme_minimal()
 
 ```
+
+
+
+```{r}
+
+
+
+```
+
+
+
