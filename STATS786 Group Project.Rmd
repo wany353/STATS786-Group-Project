@@ -104,6 +104,11 @@ train <- read_csv('qgdp_training.csv') %>%
   as_tsibble(index = Date) %>% 
   select(1, 17)
 
+full <- read_csv("qgdp_full.csv") %>%
+  mutate(Date = yearquarter(Date)) %>%
+  as_tsibble(index = Date) %>% 
+  select(1, 17)
+
 
 train %>% 
   autoplot()
@@ -113,12 +118,103 @@ train %>%
   components() %>%
   autoplot()
 ```
+The time plot shows an overall upward trend. It can be observed that the data has obvious periodic fluctuations, reflecting seasonal variations.
+
+For Trend:
+From the plot, it can be seen that the wholesale volume shows an overall upward trend. In the early period, the growth was slow. During the middle period (approximately from 2000 to 2010), there was a period of stability, and then in recent years, it began to rise rapidly.
+
+For Seasonal:
+The seasonal plot shows periodic fluctuations. In the early period, the seasonal fluctuations were relatively small and stable, but starting from the middle period, the amplitude of the fluctuations increased significantly.
+
+For Remainder:
+The remainder part looks relatively random, indicating that after removing the trend and seasonal components, there are no obvious structures or patterns.
+
+
 
 # 2. ETS models
 ```{r}
+#ETS model
+ets_manual <- train %>%
+  model(
+    ets_mam = ETS(`Wholesale Trade` ~ error("M") + trend("A") + season("M")),
+    ets_aaa = ETS(`Wholesale Trade` ~ error("A") + trend("A") + season("A")),
+    ets_ana = ETS(`Wholesale Trade` ~ error("A") + trend("N") + season("A"))
+  )
+
+
+# auto ETS
+ets_auto <- train %>%
+  model(ets = ETS(`Wholesale Trade`))
+
+report(ets_auto)
+
+
+glance(ets_manual) %>%
+  arrange(AICc)
+
+glance(ets_auto)
+```
+
+
+By comparing the AICc values, we found that the smallest AICc belongs to both the manually fitted MAM ETS model and the automatically fitted model. Since they have the same AICc, we can select the best performing model, which is ets_mam.
+
+
+
+```{r}
+ets_manual %>% 
+  select(ets_mam) %>% 
+  gg_tsresiduals()
+
+
+
+ets_manual %>% 
+  select(ets_mam) %>% 
+  augment() %>% 
+  features(.innov,features = ljung_box,lag=12. ,dof=6)
 
 ```
 
+
+
+```{r}
+ETS=ets_manual %>% 
+  select(ets_mam)
+
+
+ETS.resid <- ETS %>%
+  augment() %>%
+  select(.innov)
+
+p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
+
+print(p_value)
+```
+
+A p-value of 0.815 indicates that we do not have enough evidence to reject the hypothesis of independence of the residuals. This means that, from a statistical perspective, the residuals appear to be independent.
+
+```{r}
+ETS=ets_manual %>% 
+  select(ets_mam)
+
+# forecast
+forecasts <- ETS %>%
+  forecast(h = "2 years") 
+
+# forecast plot
+autoplot(forecasts) +
+  labs(title = "ETS Model Forecast",
+       y = "Wholesale Trade",
+       x = "Time")
+
+
+autoplot(forecasts) +
+  autolayer(full) + 
+  labs(title = "ETS Model Forecast",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
+
+```
 
 # 3. ARIMA models
 ## Transformations
