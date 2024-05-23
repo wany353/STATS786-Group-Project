@@ -371,6 +371,27 @@ print(s$p.value)
 
 The surrogate test p-value of 0.018， which means there is a degree of autocorrelation in the residuals.
 
+```{r}
+forecasts_nnar <- fit %>%
+  forecast(h = "2 years")
+
+
+autoplot(forecasts_nnar) +
+  labs(title = "NNAR Model Forecast",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
+
+
+autoplot(forecasts_nnar) +
+  autolayer(full, series = "Actual Data") +
+  labs(title = "NNAR Model Forecast with Actual Data",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
+
+```
+
 # 5. Assumption checking
 # Explaination of surrogate data testing for independence in time series
 
