@@ -237,18 +237,18 @@ $w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
 
 ```{r, warning=FALSE}
 
-fit <- train %>% 
+NNAR_fit <- train %>% 
   model(NNETAR(`Wholesale Trade`))
 
-report(fit)
+report(NNAR_fit)
 
-augment(fit)
+augment(NNAR_fit)
 
 train %>% 
   autoplot(`Wholesale Trade`, color = 'purple', alpha = 0.5) +
-  geom_line(aes(y = augment(fit)$.fitted))
+  geom_line(aes(y = augment(NNAR_fit)$.fitted))
 
-accuracy(fit)
+accuracy(NNAR_fit)
 
 
 ```
@@ -273,23 +273,7 @@ The output units of the neural network are linear, meaning the activation functi
 
 The `sigma^2` (variance of the residuals) is estimated as 13233. This provides an indication of the model's error variance, which is a measure of how much the model's predictions deviate from the actual values.
 
-```{r}
-#Extract the residuals from the model fit.
-residuals <- fit %>%
-  augment() %>%
-  select(.innov)
 
-#Remove any NA values from the residuals. This is because any missing values may affect the results of the independence test.
-residuals_clean <- na.omit(residuals)
-
-#Independence tests are performed using the cleaned residuals. surrogate.test function scrambles the residual data several times (default 1000 times), calculates and records a residual-based Ljung-Box or Box-Pierce statistic each time, and then compares the distribution of the statistic from the original data to the statistic produced by scrambling the data in order to calculate the p value.
-s <- surrogate.test(residuals_clean$.innov, 8, 1000)
-
-#Outputs the p-value
-print(s$p.value)
-```
-
-The surrogate test p-value of 0.018， which means there is a degree of autocorrelation in the residuals.
 
 # 5. Assumption checking
 
@@ -361,6 +345,26 @@ surrogate.test(ARIMA.resid, 8, 1000)$p.value
 The surrogate test p-value of 0.998 suggests that the residuals are consistent
 with white noise.
 
+## NNAR
+
+```{r}
+#Extract the residuals from the model fit.
+residuals <- NNAR_fit %>%
+  augment() %>%
+  select(.innov)
+
+#Remove any NA values from the residuals. This is because any missing values may affect the results of the independence test.
+residuals_clean <- na.omit(residuals)
+
+#Independence tests are performed using the cleaned residuals. surrogate.test function scrambles the residual data several times (default 1000 times), calculates and records a residual-based Ljung-Box or Box-Pierce statistic each time, and then compares the distribution of the statistic from the original data to the statistic produced by scrambling the data in order to calculate the p value.
+s <- surrogate.test(residuals_clean$.innov, 8, 1000)
+
+#Outputs the p-value
+print(s$p.value)
+```
+
+The surrogate test p-value of 0.018， which means there is a degree of autocorrelation in the residuals.
+
 # 6. Forecasting
 
 ## ETS
@@ -412,7 +416,7 @@ estimated forecast variance.
 ## NNAR
 
 ```{r, cache=TRUE}
-forecasts_nnar <- fit %>%
+forecasts_nnar <- NNAR_fit %>%
   forecast(h = "2 years")
 
 #autoplot(forecasts_nnar) +
