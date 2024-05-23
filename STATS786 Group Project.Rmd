@@ -353,9 +353,41 @@ The output units of the neural network are linear, meaning the activation functi
 
 The `sigma^2` (variance of the residuals) is estimated as 13233. This provides an indication of the model's error variance, which is a measure of how much the model's predictions deviate from the actual values.
 
+```{r}
+#Extract the residuals from the model fit.
+residuals <- fit %>%
+  augment() %>%
+  select(.innov)
 
+#Remove any NA values from the residuals. This is because any missing values may affect the results of the independence test.
+residuals_clean <- na.omit(residuals)
+
+#Independence tests are performed using the cleaned residuals. surrogate.test function scrambles the residual data several times (default 1000 times), calculates and records a residual-based Ljung-Box or Box-Pierce statistic each time, and then compares the distribution of the statistic from the original data to the statistic produced by scrambling the data in order to calculate the p value.
+s <- surrogate.test(residuals_clean$.innov, 8, 1000)
+
+#Outputs the p-value
+print(s$p.value)
+
+```
 
 # 5. Assumption checking
+# Explaination of surrogate data testing for independence in time series
+
+Surrogate data testing is a method used to assess the statistical significance of features observed in time series data. It helps determine whether observed characteristics in the data could have occurred by chance under a null hypothesis that assumes the data is independent and identically distributed.
+
+### Random Shuffle Method
+
+- Shuffling: The data is shuffled randomly, destroying any time-dependent structure (like autocorrelation) while preserving other properties such as the mean and variance. This random permutation is repeated many times to generate surrogate datasets.
+
+- Calculation of Test Statistics: For each surrogate dataset, a test statistic is calculated. Commonly used statistics include the Ljung-Box and Box-Pierce test statistics.
+
+- Comparison with Original Data: The test statistic of the original (unshuffled) dataset is compared against the distribution of test statistics obtained from the shuffled (surrogate) datasets. If the original statistic is significantly higher than those from the surrogates, it suggests that the observed autocorrelation is unlikely to have occurred by chance, implying non-independence in the data.
+
+### Ljung-Box and Box-Pierce Tests
+
+- Ljung-Box Test: Calculates a statistic based on the sum of squared autocorrelations, adjusted for sample size and the number of lags considered. It's particularly sensitive to autocorrelations at higher lags.
+
+- Box-Pierce Test: A simpler version of the Ljung-Box test that uses a straightforward sum of squared autocorrelations.
 ```{r}
 
 ```
