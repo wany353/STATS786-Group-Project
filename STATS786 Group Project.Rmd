@@ -1,6 +1,6 @@
 ---
 title: "STATS 786 Group Project"
-author: "Yucheng Wang, Eric Shi, Tongxin Li, Jinze, Li"
+author: "Yucheng Wang, Eric Shi, Tongxin Li, Jinze Li"
 date: "2024-05-14"
 output: html_document
 ---
@@ -97,6 +97,7 @@ plot.surrogate = function(obj) {
 ```
 
 # 1. Exploratory data analysis
+
 ```{r, warning=FALSE}
 # read in the data
 train <- read_csv('qgdp_training.csv') %>%
@@ -133,6 +134,7 @@ The remainder part looks relatively random, indicating that after removing the t
 
 
 # 2. ETS models
+
 ```{r}
 #ETS model
 ets_manual <- train %>%
@@ -156,72 +158,10 @@ glance(ets_manual) %>%
 glance(ets_auto)
 ```
 
-
-By comparing the AICc values, we found that the smallest AICc belongs to both the manually fitted MAM ETS model and the automatically fitted model. Since they have the same AICc, we can select the best performing model, which is ets_mam.
-
-
-
-```{r}
-ets_manual %>% 
-  select(ets_mam) %>% 
-  gg_tsresiduals()
-
-
-
-ets_manual %>% 
-  select(ets_mam) %>% 
-  augment() %>% 
-  features(.innov,features = ljung_box,lag=12. ,dof=6)
-
-```
-
-Based on the residual plot, the residuals are distributed around zero with no obvious trends or patterns, indicating that the residuals have a zero mean.
-
-From the ACF plot, all values are within the range, so it can be considered that there is no autocorrelation.
-
-Regarding the distribution, the plot shows a slightly normal distribution, but it can generally be regarded as normal.
-
-The p-value is 0.25, which is greater than 0.05, so we do not have enough evidence to reject the null hypothesis, and therefore we consider the residuals to be white noise.
-
-```{r}
-ETS=ets_manual %>% 
-  select(ets_mam)
-
-
-ETS.resid <- ETS %>%
-  augment() %>%
-  select(.innov)
-
-p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
-
-print(p_value)
-```
-
-A p-value of 0.815 indicates that we do not have enough evidence to reject the hypothesis of independence of the residuals. This means that, from a statistical perspective, the residuals appear to be independent.
-
-```{r}
-ETS=ets_manual %>% 
-  select(ets_mam)
-
-# forecast
-forecasts <- ETS %>%
-  forecast(h = "2 years") 
-
-# forecast plot
-autoplot(forecasts) +
-  labs(title = "ETS Model Forecast",
-       y = "Wholesale Trade",
-       x = "Time")
-
-
-autoplot(forecasts) +
-  autolayer(full) + 
-  labs(title = "ETS Model Forecast",
-       y = "Wholesale Trade",
-       x = "Time") +
-  theme_minimal()
-
-```
+By comparing the AICc values, we found that the smallest AICc belongs to both
+the manually fitted MAM ETS model and the automatically fitted model.
+Since they have the same AICc, we can select the best performing model,
+which is ets_mam.
 
 # 3. ARIMA models
 ## Transformations
@@ -294,6 +234,7 @@ where $\varepsilon_t \sim N(0, \sigma^2)$ and
 $w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
 
 # 4. Neural network autoregression (NNAR) models
+
 ```{r, warning=FALSE}
 
 fit <- train %>% 
@@ -350,28 +291,8 @@ print(s$p.value)
 
 The surrogate test p-value of 0.018， which means there is a degree of autocorrelation in the residuals.
 
-```{r}
-forecasts_nnar <- fit %>%
-  forecast(h = "2 years")
-
-
-autoplot(forecasts_nnar) +
-  labs(title = "NNAR Model Forecast",
-       y = "Wholesale Trade",
-       x = "Time") +
-  theme_minimal()
-
-
-autoplot(forecasts_nnar) +
-  autolayer(full, series = "Actual Data") +
-  labs(title = "NNAR Model Forecast with Actual Data",
-       y = "Wholesale Trade",
-       x = "Time") +
-  theme_minimal()
-
-```
-
 # 5. Assumption checking
+
 ## Explanation of surrogate data testing for independence in time series
 
 Surrogate data testing is a method used to assess the statistical significance of features observed in time series data. It helps determine whether observed characteristics in the data could have occurred by chance under a null hypothesis that assumes the data is independent and identically distributed.
@@ -389,6 +310,37 @@ Surrogate data testing is a method used to assess the statistical significance o
 - Ljung-Box Test: Calculates a statistic based on the sum of squared autocorrelations, adjusted for sample size and the number of lags considered. It's particularly sensitive to autocorrelations at higher lags.
 
 - Box-Pierce Test: A simpler version of the Ljung-Box test that uses a straightforward sum of squared autocorrelations.
+
+## ETS
+
+```{r}
+ets_manual %>% 
+  select(ets_mam) %>% 
+  gg_tsresiduals()
+```
+
+Based on the residual plot, the residuals are distributed around zero with no obvious trends or patterns, indicating that the residuals have a zero mean.
+
+From the ACF plot, all values are within the range, so it can be considered that there is no autocorrelation.
+
+Regarding the distribution, the plot shows a slightly normal distribution, but it can generally be regarded as normal.
+
+The p-value is 0.25, which is greater than 0.05, so we do not have enough evidence to reject the null hypothesis, and therefore we consider the residuals to be white noise.
+
+```{r}
+ETS=ets_manual %>% 
+  select(ets_mam)
+
+ETS.resid <- ETS %>%
+  augment() %>%
+  select(.innov)
+
+p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
+
+print(p_value)
+```
+
+A p-value of 0.815 indicates that we do not have enough evidence to reject the hypothesis of independence of the residuals. This means that, from a statistical perspective, the residuals appear to be independent.
 
 ## ARIMA
 
@@ -409,30 +361,89 @@ surrogate.test(ARIMA.resid, 8, 1000)$p.value
 The surrogate test p-value of 0.998 suggests that the residuals are consistent
 with white noise.
 
-```{r}
-
-```
-
 # 6. Forecasting
-```{r}
 
+## ETS
+
+```{r}
+ETS=ets_manual %>% 
+  select(ets_mam)
+
+# forecast
+forecasts <- ETS %>%
+  forecast(h = "2 years") 
+
+# forecast plot
+#autoplot(forecasts) +
+#  labs(title = "ETS Model Forecast",
+#       y = "Wholesale Trade",
+#       x = "Time")
+
+autoplot(forecasts) +
+  autolayer(full) + 
+  labs(title = "ETS Model Forecast",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
+
+hilo(forecasts, 95)
 ```
 
 ## ARIMA
 
 ```{r}
-fc = arima_fit %>% select(auto) %>% forecast(h=8)
-hilo(fc, 95)
+arima_fc = arima_fit %>% select(auto) %>% forecast(h=8)
+hilo(arima_fc, 95)
 
-accuracy(fc, full)[c(".model", "MAE", "RMSE", "MAPE", "MASE")]
+autoplot(arima_fc) +
+  autolayer(full) + 
+  labs(title = "ARIMA Model Forecast",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
 ```
 
 The 95% prediction intervals for the ARIMA model are calculated with
 $\hat{y}_{T+h|T} \pm 1.96\hat{\sigma}_h$ where $\hat{\sigma}_h^2$ is the
 estimated forecast variance.
 
-For the ARIMA model which we believe has the best predictive ability, the MAE is
-155, the RMSE is 172, the MAPE us 4.19 and the MASE is 1.32.
+
+
+## NNAR
+
+```{r, cache=TRUE}
+forecasts_nnar <- fit %>%
+  forecast(h = "2 years")
+
+#autoplot(forecasts_nnar) +
+#  labs(title = "NNAR Model Forecast",
+#       y = "Wholesale Trade",
+#       x = "Time") +
+#  theme_minimal()
+
+
+autoplot(forecasts_nnar) +
+  autolayer(full, series = "Actual Data") +
+  labs(title = "NNAR Model Forecast with Actual Data",
+       y = "Wholesale Trade",
+       x = "Time") +
+  theme_minimal()
+
+hilo(forecasts_nnar, 95)
+```
+
+## Model comparison
+
+```{r}
+acc_ets = accuracy(forecasts, full)[c(".model", "MAE", "RMSE", "MAPE", "MASE")]
+acc_arima = accuracy(arima_fc, full)[c(".model", "MAE", "RMSE", "MAPE", "MASE")]
+acc_nnar = accuracy(forecasts_nnar, full)[c(".model", "MAE", "RMSE", "MAPE", "MASE")]
+
+rbind(acc_ets, acc_arima, acc_nnar) %>% mutate(.model = c("ETS", "ARIMA", "NNAR"))
+```
+
+For all accuracy measures MAE, RMSE, MAPE, and MASE, the ETS model performed
+the best, followed by ARIMA second and NNAR third.
 
 # 7. Member contributions
 
