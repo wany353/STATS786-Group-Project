@@ -367,8 +367,9 @@ s <- surrogate.test(residuals_clean$.innov, 8, 1000)
 
 #Outputs the p-value
 print(s$p.value)
-
 ```
+
+The surrogate test p-value of 0.018， which means there is a degree of autocorrelation in the residuals.
 
 # 5. Assumption checking
 # Explaination of surrogate data testing for independence in time series
