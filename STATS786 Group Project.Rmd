@@ -118,6 +118,7 @@ train %>%
   components() %>%
   autoplot()
 ```
+
 The time plot shows an overall upward trend. It can be observed that the data has obvious periodic fluctuations, reflecting seasonal variations.
 
 For Trend:
@@ -181,7 +182,6 @@ From the ACF plot, all values are within the range, so it can be considered that
 Regarding the distribution, the plot shows a slightly normal distribution, but it can generally be regarded as normal.
 
 The p-value is 0.25, which is greater than 0.05, so we do not have enough evidence to reject the null hypothesis, and therefore we consider the residuals to be white noise.
-
 
 ```{r}
 ETS=ets_manual %>% 
@@ -259,16 +259,16 @@ is required.
 train %>%
   gg_tsdisplay(difference(box_cox(`Wholesale Trade`, -0.14), lag=4), plot_type="partial")
 
-fit = train %>%
+arima_fit = train %>%
   model(auto = ARIMA(box_cox(`Wholesale Trade`, -0.14), stepwise=F, approximation=F),
         arima100210 = ARIMA(box_cox(`Wholesale Trade`, -0.14) ~ pdq(1,0,0) + PDQ(2,1,0)),
         arima100011 = ARIMA(box_cox(`Wholesale Trade`, -0.14) ~ pdq(1,0,0) + PDQ(0,1,1)),
         arima002210 = ARIMA(box_cox(`Wholesale Trade`, -0.14) ~ pdq(0,0,2) + PDQ(2,1,0)),
         arima002011 = ARIMA(box_cox(`Wholesale Trade`, -0.14) ~ pdq(0,0,2) + PDQ(0,1,1)))
 
-glance(fit) %>% arrange(AICc) %>% select(.model:BIC)
+glance(arima_fit) %>% arrange(AICc) %>% select(.model:BIC)
 
-fit$auto
+arima_fit$auto
 ```
 
 To come up with candidate models, we used the ARIMA function to find a model
@@ -292,34 +292,6 @@ $$(1-B^4)w_t = (1+\Theta_1B^4)(1+\theta_1B+\theta_2B^2+\theta_3B^3)
 
 where $\varepsilon_t \sim N(0, \sigma^2)$ and
 $w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
-
-## Assumption checking
-
-```{r}
-set.seed(0)
-
-fit %>%
-  select(auto) %>%
-  gg_tsresiduals()
-
-ARIMA.resid = augment(fit) %>%
-  filter(.model == "auto") %>%
-  select(.innov)
-
-surrogate.test(ARIMA.resid, 8, 1000)$p.value
-```
-
-The surrogate test p-value of 0.998 suggests that the residuals are consistent
-with white noise.
-
-## Forecasting
-
-```{r}
-fc = fit %>% select(auto) %>% forecast(h=8)
-hilo(fc, 95)
-```
-
-
 
 # 4. Neural network autoregression (NNAR) models
 ```{r, warning=FALSE}
@@ -400,7 +372,7 @@ autoplot(forecasts_nnar) +
 ```
 
 # 5. Assumption checking
-# Explaination of surrogate data testing for independence in time series
+## Explanation of surrogate data testing for independence in time series
 
 Surrogate data testing is a method used to assess the statistical significance of features observed in time series data. It helps determine whether observed characteristics in the data could have occurred by chance under a null hypothesis that assumes the data is independent and identically distributed.
 
@@ -417,6 +389,26 @@ Surrogate data testing is a method used to assess the statistical significance o
 - Ljung-Box Test: Calculates a statistic based on the sum of squared autocorrelations, adjusted for sample size and the number of lags considered. It's particularly sensitive to autocorrelations at higher lags.
 
 - Box-Pierce Test: A simpler version of the Ljung-Box test that uses a straightforward sum of squared autocorrelations.
+
+## ARIMA
+
+```{r}
+set.seed(0)
+
+arima_fit %>%
+  select(auto) %>%
+  gg_tsresiduals()
+
+ARIMA.resid = augment(arima_fit) %>%
+  filter(.model == "auto") %>%
+  select(.innov)
+
+surrogate.test(ARIMA.resid, 8, 1000)$p.value
+```
+
+The surrogate test p-value of 0.998 suggests that the residuals are consistent
+with white noise.
+
 ```{r}
 
 ```
@@ -425,6 +417,22 @@ Surrogate data testing is a method used to assess the statistical significance o
 ```{r}
 
 ```
+
+## ARIMA
+
+```{r}
+fc = arima_fit %>% select(auto) %>% forecast(h=8)
+hilo(fc, 95)
+
+accuracy(fc, full)[c(".model", "MAE", "RMSE", "MAPE", "MASE")]
+```
+
+The 95% prediction intervals for the ARIMA model are calculated with
+$\hat{y}_{T+h|T} \pm 1.96\hat{\sigma}_h$ where $\hat{\sigma}_h^2$ is the
+estimated forecast variance.
+
+For the ARIMA model which we believe has the best predictive ability, the MAE is
+155, the RMSE is 172, the MAPE us 4.19 and the MASE is 1.32.
 
 # 7. Member contributions
 
