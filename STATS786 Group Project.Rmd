@@ -531,6 +531,9 @@ autoplot(forecasts_nnar) +
 hilo(forecasts_nnar, 95)
 ```
 
+From the visual inspection, it appears that the ETS Model and ARIMA Model have better predictions. Next, the models will be further compared using performance metrics.
+
+
 ## Model comparison
 
 ```{r}
