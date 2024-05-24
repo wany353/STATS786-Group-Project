@@ -122,16 +122,11 @@ train %>%
 
 The time plot shows an overall upward trend. It can be observed that the data has obvious periodic fluctuations, reflecting seasonal variations.
 
-For Trend:
-From the plot, it can be seen that the wholesale volume shows an overall upward trend. In the early period, the growth was slow. During the middle period (approximately from 2000 to 2010), there was a period of stability, and then in recent years, it began to rise rapidly.
+For Trend: From the plot, it can be seen that the wholesale volume shows an overall upward trend. In the early period, the growth was slow. During the middle period (approximately from 2000 to 2010), there was a period of stability, and then in recent years, it began to rise rapidly.
 
-For Seasonal:
-The seasonal plot shows periodic fluctuations. In the early period, the seasonal fluctuations were relatively small and stable, but starting from the middle period, the amplitude of the fluctuations increased significantly.
+For Seasonal: The seasonal plot shows periodic fluctuations. In the early period, the seasonal fluctuations were relatively small and stable, but starting from the middle period, the amplitude of the fluctuations increased significantly.
 
-For Remainder:
-The remainder part looks relatively random, indicating that after removing the trend and seasonal components, there are no obvious structures or patterns.
-
-
+For Remainder: The remainder part looks relatively random, indicating that after removing the trend and seasonal components, there are no obvious structures or patterns.
 
 # 2. ETS models
 
@@ -158,12 +153,10 @@ glance(ets_manual) %>%
 glance(ets_auto)
 ```
 
-By comparing the AICc values, we found that the smallest AICc belongs to both
-the manually fitted MAM ETS model and the automatically fitted model.
-Since they have the same AICc, we can select the best performing model,
-which is ets_mam.
+By comparing the AICc values, we found that the smallest AICc belongs to both the manually fitted MAM ETS model and the automatically fitted model. Since they have the same AICc, we can select the best performing model, which is ets_mam.
 
 # 3. ARIMA models
+
 ## Transformations
 
 ```{r}
@@ -173,8 +166,7 @@ train %>%
   autoplot(box_cox(`Wholesale Trade`, -0.14))
 ```
 
-It looks like multiplicative seasonality is present, so a Box-Cox transformation
-was applied. Guerrero's method suggested a lambda parameter of -0.14.
+It looks like multiplicative seasonality is present, so a Box-Cox transformation was applied. Guerrero's method suggested a lambda parameter of -0.14.
 
 ## Differencing
 
@@ -186,14 +178,9 @@ train %>%
 	features(difference(box_cox(`Wholesale Trade`, -0.14), lag=4), unitroot_kpss)
 ```
 
-Performing the KPSS test on the Box-Cox wholesale trade variable before
-differencing gave a p-value of 0.01, so we have strong evidence against
-the null hypothesis that the time series is stationary.
+Performing the KPSS test on the Box-Cox wholesale trade variable before differencing gave a p-value of 0.01, so we have strong evidence against the null hypothesis that the time series is stationary.
 
-A seasonal difference was applied because it looks like seasonality is present.
-Performing the KPSS test on the seasonally differenced series gave a p-value
-of 0.1, so we can assume the series is stationary and no further differencing
-is required.
+A seasonal difference was applied because it looks like seasonality is present. Performing the KPSS test on the seasonally differenced series gave a p-value of 0.1, so we can assume the series is stationary and no further differencing is required.
 
 ```{r}
 train %>%
@@ -211,27 +198,18 @@ glance(arima_fit) %>% arrange(AICc) %>% select(.model:BIC)
 arima_fit$auto
 ```
 
-To come up with candidate models, we used the ARIMA function to find a model
-automatically, as well as manually finding models by considering the ACF and
-PACF plots.
+To come up with candidate models, we used the ARIMA function to find a model automatically, as well as manually finding models by considering the ACF and PACF plots.
 
-The PACF plot has spikes at lags 4 and 8, suggesting 2 seasonal AR terms, and
-a spike at lag 1, suggesting 1 non-seasonal AR term. The ACF plot has spikes at
-lag 4, suggesting 1 seasonal MA term, and spikes at lags 1 and 2, suggesting 2
-non-seasonal MA terms. Therefore, we considered models ARIMA(1,0,0)(0,1,1)[4],
-ARIMA(1,0,0)(2,1,0)[4], ARIMA(0,0,2)(0,1,1)[4], and ARIMA(0,0,2)(2,1,0)[4].
+The PACF plot has spikes at lags 4 and 8, suggesting 2 seasonal AR terms, and a spike at lag 1, suggesting 1 non-seasonal AR term. The ACF plot has spikes at lag 4, suggesting 1 seasonal MA term, and spikes at lags 1 and 2, suggesting 2 non-seasonal MA terms. Therefore, we considered models ARIMA(1,0,0)(0,1,1)[4], ARIMA(1,0,0)(2,1,0)[4], ARIMA(0,0,2)(0,1,1)[4], and ARIMA(0,0,2)(2,1,0)[4].
 
-Overall, the ARIMA model with the best predictive ability is the automatically
-found ARIMA(0,0,3)(0,1,1)[4] due to it having the lowest AICc score.
+Overall, the ARIMA model with the best predictive ability is the automatically found ARIMA(0,0,3)(0,1,1)[4] due to it having the lowest AICc score.
 
 ## Fitted model equation
 
-The model equation in backshift notation is 
-$$(1-B^4)w_t = (1+\Theta_1B^4)(1+\theta_1B+\theta_2B^2+\theta_3B^3)
+The model equation in backshift notation is $$(1-B^4)w_t = (1+\Theta_1B^4)(1+\theta_1B+\theta_2B^2+\theta_3B^3)
 \varepsilon_t$$
 
-where $\varepsilon_t \sim N(0, \sigma^2)$ and
-$w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
+where $\varepsilon_t \sim N(0, \sigma^2)$ and $w_t = (sign(y_t)|y_t|^{-0.14}-1)/(-0.14)$.
 
 # 4. Neural network autoregression (NNAR) models
 
@@ -252,28 +230,34 @@ accuracy(NNAR_fit)
 
 
 ```
-Our neural network autoregressive model is NNAR(1,1,2)[4]:
-- **NNAR(p,P,k)[m]**: This is the notation for the model, where:
-  - `p`: Number of lagged inputs (autoregressive terms). Here, `p=1`.
-  - `P`: Number of seasonal lags. Here, `P=1`.
-  - `k`: Number of hidden nodes in the hidden layer. Here, `k=2`.
-  - `m`: The periodicity of the time series data. Here, `m=4` indicate that it's quarterly data.
 
+Our neural network autoregressive model is NNAR(1,1,2)[4]:
+
+**NNAR(p,P,k)[m]**: This is the notation for the model, where:
+
+-    `p`: Number of lagged inputs (autoregressive terms). Here, `p=1`.
+
+-    `P`: Number of seasonal lags. Here, `P=1`.
+
+-   `k`: Number of hidden nodes in the hidden layer. Here, `k=2`.
+
+-    `m`: The periodicity of the time series data. Here, `m=4` indicate that it's quarterly data.
 
 The model is an ensemble of 20 neural networks, and the predictions are averaged over these networks. Using multiple networks helps in reducing the variance of the predictions and improving robustness.
 
 Each individual neural network in the ensemble has:
-- **2 input nodes**: Corresponding to the lagged inputs and seasonal lags.
-- **2 hidden nodes**: In the hidden layer.
-- **1 output node**: Providing the forecasted value.
+
+-   **2 input nodes**: Corresponding to the lagged inputs and seasonal lags.
+
+-   **2 hidden nodes**: In the hidden layer.
+
+-   **1 output node**: Providing the forecasted value.
 
 The model has a total of 9 weights, which include the weights connecting the input layer to the hidden layer and the hidden layer to the output layer, plus biases.
 
 The output units of the neural network are linear, meaning the activation function used in the output layer is linear. This is typical for regression problems where the target variable is continuous.
 
 The `sigma^2` (variance of the residuals) is estimated as 13233. This provides an indication of the model's error variance, which is a measure of how much the model's predictions deviate from the actual values.
-
-
 
 # 5. Assumption checking
 
@@ -283,17 +267,17 @@ Surrogate data testing is a method used to assess the statistical significance o
 
 ### Random Shuffle Method
 
-- Shuffling: The data is shuffled randomly, destroying any time-dependent structure (like autocorrelation) while preserving other properties such as the mean and variance. This random permutation is repeated many times to generate surrogate datasets.
+-   Shuffling: The data is shuffled randomly, destroying any time-dependent structure (like autocorrelation) while preserving other properties such as the mean and variance. This random permutation is repeated many times to generate surrogate datasets.
 
-- Calculation of Test Statistics: For each surrogate dataset, a test statistic is calculated. Commonly used statistics include the Ljung-Box and Box-Pierce test statistics.
+-   Calculation of Test Statistics: For each surrogate dataset, a test statistic is calculated. Commonly used statistics include the Ljung-Box and Box-Pierce test statistics.
 
-- Comparison with Original Data: The test statistic of the original (unshuffled) dataset is compared against the distribution of test statistics obtained from the shuffled (surrogate) datasets. If the original statistic is significantly higher than those from the surrogates, it suggests that the observed autocorrelation is unlikely to have occurred by chance, implying non-independence in the data.
+-   Comparison with Original Data: The test statistic of the original (unshuffled) dataset is compared against the distribution of test statistics obtained from the shuffled (surrogate) datasets. If the original statistic is significantly higher than those from the surrogates, it suggests that the observed autocorrelation is unlikely to have occurred by chance, implying non-independence in the data.
 
 ### Ljung-Box and Box-Pierce Tests
 
-- Ljung-Box Test: Calculates a statistic based on the sum of squared autocorrelations, adjusted for sample size and the number of lags considered. It's particularly sensitive to autocorrelations at higher lags.
+-   Ljung-Box Test: Calculates a statistic based on the sum of squared autocorrelations, adjusted for sample size and the number of lags considered. It's particularly sensitive to autocorrelations at higher lags.
 
-- Box-Pierce Test: A simpler version of the Ljung-Box test that uses a straightforward sum of squared autocorrelations.
+-   Box-Pierce Test: A simpler version of the Ljung-Box test that uses a straightforward sum of squared autocorrelations.
 
 ## ETS
 
@@ -310,101 +294,6 @@ From the ACF plot, all values are within the range, so it can be considered that
 Regarding the distribution, the plot shows a slightly normal distribution, but it can generally be regarded as normal.
 
 The p-value is 0.25, which is greater than 0.05, so we do not have enough evidence to reject the null hypothesis, and therefore we consider the residuals to be white noise.
-
-
-## 5.4 Code explain:
-surrogate.test = function(data, lag, N = 1000, test.stat = "ljung-box") {
-
-The surrogate.test function is used to test the independence of time series data. It accepts the following parameters:
-data: A tsibble object or numeric vector representing the data to be tested.
-lag: The number of lags to be used in the portmanteau test statistic.
-N: The number of permutations to perform, with a default value of 1000.
-test.stat: The type of statistical test to be used, which can be either “ljung-box” or “box-pierce”.
-
-
-
-
-
-if (is_tsibble(data)) {
-  if (length(measures(data)) != 1) {
-    stop("data must be a tsibble with one measurement variable")
-  }
-  data = data %>% pull(as.character(measures(data)[[1]]))
-}
-
-If the input data is a tsibble object, the function ensures that it has only one measurement variable and then extracts the time series data for that variable.
-
-
-
-
-n = length(data)
-Q.null = rep(NA, N)
-Initialize some variables, including the data length n and a vector Q.null for storing the permutation statistics.
-
-
-
-
-if (test.stat == "ljung-box") {
-  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
-  Q.obs = n * (n + 2) * sum(r.obs ^ 2 / (n - 1:lag))
-}
-If the “ljung-box” test is used, the function first calculates the autocorrelation function (ACF) of the original data and then computes the Ljung-Box test statistic Q.obs based on it.
-
-
-
-
-if (test.stat == "box-pierce") {
-  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
-  Q.obs = n * sum(r.obs ^ 2)
-}
-If the “box-pierce” test is used, the function computes the Box-Pierce test statistic Q.obs.
-
-
-
-
-
-for (i in 1:N) {
-  surrogate = sample(data, n)
-  r = acf(surrogate, plot = FALSE)$acf[2:(lag + 1)]
-  if (test.stat == "ljung-box") {
-    Q.null[i] = n * (n + 2) * sum(r ^ 2 / (n - 1:lag))
-  } else {
-    Q.null[i] = n * sum(r ^ 2)
-  }
-}
-Generate surrogate data and compute the surrogate statistics. By randomly shuffling the original data, generate N surrogate datasets and compute the statistic Q.null for each surrogate dataset.
-
-
-
-
-
-
-p.value = mean(Q.null >= Q.obs)
-output = list(Q.null = Q.null, Q.obs = Q.obs, test.stat = test.stat, p.value = p.value)
-class(output) = "surrogate"
-return(output)
-By comparing the surrogate statistics with the original statistic, compute the p-value. The p-value is the proportion of surrogate statistics that are greater than or equal to the original statistic. Finally, return the results as a list.
-
-
-
-
-
-
-ETS=ets_manual %>% select(ets_mam)
-ETS.resid <- ETS %>% augment() %>% select(.innov)
-Select the residual data from the model and store it in ETS.resid.
-
-
-
-
-
-p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
-print(p_value)
-
-Use the surrogate.test function to test the independence of the residuals, with a lag period of 8 and 1000 permutations. Finally, output the p-value.
-
-
-
 
 ```{r}
 ETS=ets_manual %>% 
@@ -437,8 +326,7 @@ ARIMA.resid = augment(arima_fit) %>%
 surrogate.test(ARIMA.resid, 8, 1000)$p.value
 ```
 
-The surrogate test p-value of 0.998 suggests that the residuals are consistent
-with white noise.
+The surrogate test p-value of 0.998 suggests that the residuals are consistent with white noise.
 
 ## NNAR
 
@@ -502,11 +390,7 @@ autoplot(arima_fc) +
   theme_minimal()
 ```
 
-The 95% prediction intervals for the ARIMA model are calculated with
-$\hat{y}_{T+h|T} \pm 1.96\hat{\sigma}_h$ where $\hat{\sigma}_h^2$ is the
-estimated forecast variance.
-
-
+The 95% prediction intervals for the ARIMA model are calculated with $\hat{y}_{T+h|T} \pm 1.96\hat{\sigma}_h$ where $\hat{\sigma}_h^2$ is the estimated forecast variance.
 
 ## NNAR
 
@@ -544,20 +428,93 @@ acc_nnar = accuracy(forecasts_nnar, full)[c(".model", "MAE", "RMSE", "MAPE", "MA
 rbind(acc_ets, acc_arima, acc_nnar) %>% mutate(.model = c("ETS", "ARIMA", "NNAR"))
 ```
 
-For all accuracy measures MAE, RMSE, MAPE, and MASE, the ETS model performed
-the best, followed by ARIMA second and NNAR third.
+For all accuracy measures MAE, RMSE, MAPE, and MASE, the ETS model performed the best, followed by ARIMA second and NNAR third.
 
 # 7. Member contributions
 
 
-Everyone completed the entire process for their model (from modeling to forecasting).
-Eric: ARIMA models
-Jinze Li: ETS models, Exploratory data analysis
-Yucheng Wang, Tongxin Li: Neural network autoregression models
 
 
 
+## `surrogate.test` Code explain:
 
+```         
+surrogate.test = function(data, lag, N = 1000, test.stat = "ljung-box") {
 
+#The surrogate.test function is used to test the independence of time series data. It accepts the following parameters:
+#data: A tsibble object or numeric vector representing the data to be tested.
+#lag: The number of lags to be used in the portmanteau test statistic.
+#N: The number of permutations to perform, with a default value of 1000.
+#test.stat: The type of statistical test to be used, which can be either “ljung-box” or “box-pierce”.
 
+if (is_tsibble(data)) {
+  if (length(measures(data)) != 1) {
+    stop("data must be a tsibble with one measurement variable")
+  }
+  data = data %>% pull(as.character(measures(data)[[1]]))
+}
+```
 
+If the input data is a tsibble object, the function ensures that it has only one measurement variable and then extracts the time series data for that variable.
+
+```         
+n = length(data)
+Q.null = rep(NA, N)
+```
+
+Initialize some variables, including the data length n and a vector Q.null for storing the permutation statistics.
+
+```         
+if (test.stat == "ljung-box") {
+  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
+  Q.obs = n * (n + 2) * sum(r.obs ^ 2 / (n - 1:lag))
+}
+```
+
+If the "ljung-box" test is used, the function first calculates the autocorrelation function (ACF) of the original data and then computes the Ljung-Box test statistic Q.obs based on it.
+
+```         
+if (test.stat == "box-pierce") {
+  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
+  Q.obs = n * sum(r.obs ^ 2)
+}
+```
+
+If the "box-pierce" test is used, the function computes the Box-Pierce test statistic Q.obs.
+
+```         
+for (i in 1:N) {
+  surrogate = sample(data, n)
+  r = acf(surrogate, plot = FALSE)$acf[2:(lag + 1)]
+  if (test.stat == "ljung-box") {
+    Q.null[i] = n * (n + 2) * sum(r ^ 2 / (n - 1:lag))
+  } else {
+    Q.null[i] = n * sum(r ^ 2)
+  }
+}
+```
+
+Generate surrogate data and compute the surrogate statistics. By randomly shuffling the original data, generate N surrogate datasets and compute the statistic Q.null for each surrogate dataset.
+
+```         
+p.value = mean(Q.null >= Q.obs)
+output = list(Q.null = Q.null, Q.obs = Q.obs, test.stat = test.stat, p.value = p.value)
+class(output) = "surrogate"
+return(output)
+```
+
+By comparing the surrogate statistics with the original statistic, compute the p-value. The p-value is the proportion of surrogate statistics that are greater than or equal to the original statistic. Finally, return the results as a list.
+
+```         
+ETS=ets_manual %>% select(ets_mam)
+ETS.resid <- ETS %>% augment() %>% select(.innov)
+```
+
+Select the residual data from the model and store it in ETS.resid.
+
+```         
+p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
+print(p_value)
+```
+
+Use the surrogate.test function to test the independence of the residuals, with a lag period of 8 and 1000 permutations. Finally, output the p-value.
