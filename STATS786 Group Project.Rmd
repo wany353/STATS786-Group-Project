@@ -311,6 +311,101 @@ Regarding the distribution, the plot shows a slightly normal distribution, but i
 
 The p-value is 0.25, which is greater than 0.05, so we do not have enough evidence to reject the null hypothesis, and therefore we consider the residuals to be white noise.
 
+
+## 5.4 Code explain:
+surrogate.test = function(data, lag, N = 1000, test.stat = "ljung-box") {
+
+The surrogate.test function is used to test the independence of time series data. It accepts the following parameters:
+data: A tsibble object or numeric vector representing the data to be tested.
+lag: The number of lags to be used in the portmanteau test statistic.
+N: The number of permutations to perform, with a default value of 1000.
+test.stat: The type of statistical test to be used, which can be either “ljung-box” or “box-pierce”.
+
+
+
+
+
+if (is_tsibble(data)) {
+  if (length(measures(data)) != 1) {
+    stop("data must be a tsibble with one measurement variable")
+  }
+  data = data %>% pull(as.character(measures(data)[[1]]))
+}
+
+If the input data is a tsibble object, the function ensures that it has only one measurement variable and then extracts the time series data for that variable.
+
+
+
+
+n = length(data)
+Q.null = rep(NA, N)
+Initialize some variables, including the data length n and a vector Q.null for storing the permutation statistics.
+
+
+
+
+if (test.stat == "ljung-box") {
+  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
+  Q.obs = n * (n + 2) * sum(r.obs ^ 2 / (n - 1:lag))
+}
+If the “ljung-box” test is used, the function first calculates the autocorrelation function (ACF) of the original data and then computes the Ljung-Box test statistic Q.obs based on it.
+
+
+
+
+if (test.stat == "box-pierce") {
+  r.obs = acf(data, plot = FALSE)$acf[2:(lag + 1)]
+  Q.obs = n * sum(r.obs ^ 2)
+}
+If the “box-pierce” test is used, the function computes the Box-Pierce test statistic Q.obs.
+
+
+
+
+
+for (i in 1:N) {
+  surrogate = sample(data, n)
+  r = acf(surrogate, plot = FALSE)$acf[2:(lag + 1)]
+  if (test.stat == "ljung-box") {
+    Q.null[i] = n * (n + 2) * sum(r ^ 2 / (n - 1:lag))
+  } else {
+    Q.null[i] = n * sum(r ^ 2)
+  }
+}
+Generate surrogate data and compute the surrogate statistics. By randomly shuffling the original data, generate N surrogate datasets and compute the statistic Q.null for each surrogate dataset.
+
+
+
+
+
+
+p.value = mean(Q.null >= Q.obs)
+output = list(Q.null = Q.null, Q.obs = Q.obs, test.stat = test.stat, p.value = p.value)
+class(output) = "surrogate"
+return(output)
+By comparing the surrogate statistics with the original statistic, compute the p-value. The p-value is the proportion of surrogate statistics that are greater than or equal to the original statistic. Finally, return the results as a list.
+
+
+
+
+
+
+ETS=ets_manual %>% select(ets_mam)
+ETS.resid <- ETS %>% augment() %>% select(.innov)
+Select the residual data from the model and store it in ETS.resid.
+
+
+
+
+
+p_value <- surrogate.test(ETS.resid$.innov, 8, 1000)$p.value
+print(p_value)
+
+Use the surrogate.test function to test the independence of the residuals, with a lag period of 8 and 1000 permutations. Finally, output the p-value.
+
+
+
+
 ```{r}
 ETS=ets_manual %>% 
   select(ets_mam)
@@ -450,6 +545,13 @@ For all accuracy measures MAE, RMSE, MAPE, and MASE, the ETS model performed
 the best, followed by ARIMA second and NNAR third.
 
 # 7. Member contributions
+
+
+Everyone completed the entire process for their model (from modeling to forecasting).
+Eric: ARIMA models
+Jinze Li: ETS models, Exploratory data analysis
+Yucheng Wang, Tongxin Li: Neural network autoregression models
+
 
 
 
